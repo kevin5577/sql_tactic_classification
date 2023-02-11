@@ -1,0 +1,234 @@
+SELECT
+base.Date Date,
+base.client_hotel hotel,
+base.client_source_medium source_medium, 
+base.client_campaign campaign,
+base.client_data_sources data_sources,
+sum(coalesce(base.Leads__Facebook_Ads,0)) Facebook_Leads,
+sum(coalesce(base.client_cost,0)) cost,
+sum(coalesce(base.client_clicks,0)) clicks,
+sum(coalesce(base.client_impressions,0)) impressions,
+sum(coalesce(base.client_quantity,0)) quantity,
+sum(IF(regexp_contains(base.client_campaign, "derbysoft"), 0, coalesce(base.client_revenue,0))) revenue,
+sum(coalesce(base.client_sessions,0)) sessions,
+sum(IF(regexp_contains(base.client_campaign, "derbysoft"), 0, coalesce(base.client_transactions,0))) transactions,
+sum(coalesce(base.BEE_client1 , base.BEE_client2 , base.BEE_client3 , base.BEE_client4)) Booking_Engine_Entrances,
+sum(coalesce(base.Click_to_Call_hos_client1, 0) + coalesce(base.Click_to_Call_RE_client1, 0) + coalesce(Click_to_Call_client2, 0)) click_to_call,
+sum(coalesce(base.RFP_clietn1 , base.RFP_client2 , base.RFP_cleint3,RFP_cleint4)) RFP_re,
+sum(coalesce(base.Floor_Plan_Views_client1 , base.Floor_Plan_Views_client2 , base.Floor_Plan_Views_client2)) Floor_Plan_View,
+
+--New Campaign for derbysoft matching channel to source/medium
+CASE
+when 
+not regexp_contains(base.client_campaign, "derbysoft") then base.client_campaign
+when 
+regexp_contains(base.client_campaign, "derbysoft") and regexp_contains(base.client_source_medium, 'google|Google') then 'Google'
+when 
+regexp_contains(base.client_campaign, "derbysoft") and regexp_contains(base.client_source_medium, 'TripAdvisor|Tripadvisor') then 'Tripadvisor'
+when
+regexp_contains(base.client_campaign, "derbysoft") and regexp_contains(base.client_source_medium, 'Trivago|trivago') then 'Trivago'
+--New FB campaign names 
+
+end campaign_new,
+----
+
+-- Tactic Breakdown  
+--Search google--
+
+--Real Estate
+case 
+when 
+regexp_contains(base.client_source_medium, "google / cpc|google / ppc")
+and
+regexp_contains(base.client_campaign, "- Non-Branded|Non Brand|Non-Branded") and regexp_contains(base.client_campaign,"- Real-Estate|RE|Real Estate|Real-Estate")
+then "Non Branded Real Estate"
+when 
+regexp_contains(base.client_source_medium, "google / cpc|google / ppc")
+and
+regexp_contains(base.client_campaign, "Branded|Brand") and regexp_contains(base.client_campaign,"Real-Estate|RE|Real Estate") 
+then "Branded Real Estate"
+-- HOS 
+when 
+regexp_contains(base.client_source_medium, "google / cpc|google / ppc")
+and
+regexp_contains(base.client_campaign, "- Non-Branded|Non Brand|Non-Branded|Broad|broad|_Non-Brand") and regexp_contains(base.client_campaign,"- Rental|Rentals|rental|rentals|Hospitality") or regexp_contains(base.client_campaign,"Non-Brand - Local - Broad Match|Non-Brand - National - Broad Match|Search_G_Non-Brand_CO_All_General_Sebastian - Broad Match|Search_G_Non-Brand_US_All_General_Sebastian - Broad Match")
+then "Non Branded Rental"
+when 
+regexp_contains(base.client_source_medium, "google / cpc|google / ppc")
+and
+regexp_contains(base.client_campaign, "Branded|Brand|branded|Broad|broad") and regexp_contains(base.client_campaign,"Rental|Rentals|rental|rentals|Hospitality") or regexp_contains(base.client_campaign,"Brand - Broad Match|brand|Search_G_Brand_CO & TX_All_Brand_Sebastian - Broad Match")
+then "Branded Rental"
+
+--Performance max
+when
+regexp_contains(base.client_source_medium, "google / cpc|google / ppc")
+and
+regexp_contains(base.client_campaign, "Performance Max|Pmax|pmax|performance_max") 
+then "Performance Max"
+--Discovery 
+when
+regexp_contains(base.client_source_medium, "google / cpc|google / ppc")
+and
+regexp_contains(base.client_campaign, "Discovery|discovery") 
+then "Discovery"
+
+--Display
+when
+regexp_contains(base.client_source_medium, "google / cpc|google / ppc")
+and
+regexp_contains(base.client_campaign, "Display|display") and regexp_contains(base.client_campaign, "Real-Estate|RE|Real Estate|real-estate") and not regexp_contains(base.client_campaign,"Rental|Rentals|rental|rentals")
+then "Display Real Estate"
+-------
+when
+regexp_contains(base.client_source_medium, "google / cpc|google / ppc")
+and
+regexp_contains(base.client_campaign, "Display|display|Remarket") and regexp_contains(base.client_campaign, "Rental|Rentals|rental|rentals|Hospitality") and not regexp_contains(base.client_campaign,"Real-Estate|RE|Real Estate")
+then "Display Rental"
+
+--Derbysoft 
+when 
+regexp_contains(base.client_campaign, "derbysoft")
+then "Derbysoft"
+
+--Paid Social
+
+--Rental
+when 
+regexp_contains(base.client_source_medium, "ad-social|paid-social|paid_social|facebook / paid - social") and regexp_contains(base.client_campaign,'Retargeting - Rental') or regexp_contains(base.client_campaign,'retargeting|remarketing|rental_retargeting|_rental') 
+then "Social Retargeting (Rental)"
+--
+when 
+regexp_contains(base.client_source_medium, "ad-social|paid-social|paid_social|facebook / paid - social") and regexp_contains(base.client_campaign,'Prospecting - Rental') or regexp_contains(base.client_campaign,'prospecting|rental_prospecting|_rental') 
+then "Social Prospecting (Rental)"
+--Real Estate
+when 
+regexp_contains(base.client_source_medium, "ad-social|paid-social|paid_social|facebook / paid - social") and regexp_contains(base.client_campaign,'Retargeting - Real Estate') or regexp_contains(base.client_campaign,'7015|7013|_real_estate') 
+then "Social Retargeting (Real Estate)"
+when 
+regexp_contains(base.client_source_medium, "ad-social|paid-social|paid_social|facebook / paid - social") and regexp_contains(base.client_campaign,'Prospecting - Real Estate') or regexp_contains(base.client_campaign,'7015|7013|_real_estate') 
+then "Social Prospecting (Real Estate)"
+
+--Social Event/Boosting
+when 
+regexp_contains(base.client_source_medium, "ad-social|facebook / paid-social|paid_social|facebook / paid - social|cpc") and regexp_contains(base.client_campaign, "Road Cycling Camp|_events")
+or regexp_contains(base.client_campaign, "Lead Gen")
+then "Social Event/Boosting/Lead Gen"
+
+
+
+else "Campaign does not follow categorization rules"
+end Tactic 
+
+
+from production-verb.hotel_client_group.base_table_GA_FB base
+where 
+regexp_contains(base.client_source_medium,"google / cpc|google / ppc|facebook / paid_social|facebook / paid-social|facebook / ad-social|facebook / ad_social|facebook / paid - social")
+or 
+regexp_contains(base.client_campaign, 'derbysoft')
+GROUP BY
+1,2,3,4,5
+
+UNION ALL
+
+SELECT 
+  Date Date,
+  CASE
+  WHEN 
+  regexp_contains(Hotel_name, "client1")
+  then "client1"
+  WHEN 
+  regexp_contains(Hotel_name, "client2")
+  then "client2"
+  end hotel,
+  '0' source_medium, 
+  Channel campaign,
+  '0' data_sources,
+  0 Facebook_Leads,
+  sum(Cost) cost, 
+  sum(Clicks) clicks,
+  sum(Impressions) impressions, 
+  0 quantity,
+  sum(Revenue) revenue,
+  0 sessions,
+  sum(Bookings) transactions,
+  0 BEE,
+  0 click_to_call,
+  0 RFP_re,
+  0 Floor_Plan_View,
+  Channel campaign_new,
+  'Derbysoft' Tactic,
+  
+
+from production-verb.hotel_metasearch.base_table_derbysoft 
+where 
+Account_name = 'company name'
+and 
+REGEXP_CONTAINS(Hotel_name, "client1|client2")
+group by
+1,2,3,4
+
+___________________
+
+WITH
+ga_temp_table as (
+  
+ SELECT 
+   a.date,
+   a.hotel,
+   DATE_SUB(a.Date, interval EXTRACT(DAYOFWEEK FROM a.Date)-1 DAY) Week_Of,
+   sum(a.revenue) revenue
+   ,sum(a.transactions) bookings
+   ,sum(a.sessions) sessions
+   ,sum(a.quantity) quantity
+   ,sum(coalesce(a.Booking_Engine_Entrances)) Booking_Engine_Entrances,
+ FROM `production-verb.hotel_client_group.view_paid_tactics` a
+group by 
+  a.date,
+  Week_Of,
+  hotel
+   
+ -- order by date, Week_Of desc
+)
+
+
+ SELECT 
+ a.date,
+   a.Week_Of
+   ,a.hotel
+   ,a.revenue
+   ,a.bookings
+   ,a.sessions
+   ,a.quantity
+   ,a.Booking_Engine_Entrances 
+   ,--PoP
+   b.Week_Of b_4week_date,
+   b.bookings b_4week_bookings,    
+   b.revenue b_4week_revenue,    
+   b.sessions b_4week_sessions,
+   b.quantity b_4week_Quantity,
+   b.Booking_Engine_Entrances b_4week_booking_engine_entrance
+   ,--YoY
+   c.Week_Of c_year_date,
+   c.bookings c_year_bookings,    
+   c.revenue c_year_revenue,    
+   c.sessions c_year_sessions,
+   c.quantity c_year_quantity,
+   c.Booking_Engine_Entrances c_year_booking_engine_entrance
+
+ FROM ga_temp_table a
+--PoP
+ left join ga_temp_table b
+    on 
+      DATE_ADD(a.date, INTERVAL -4 week) = b.date -- this was "4 weeks" before being changed to "1 month"
+      and
+      a.hotel = b.hotel
+      
+--YoY
+ left join ga_temp_table c
+    on 
+      DATE_ADD(a.date, INTERVAL -1 year) = c.date 
+      and 
+      a.hotel = c.hotel
+
+  --    order by Week_Of
+
